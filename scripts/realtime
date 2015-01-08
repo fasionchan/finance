@@ -22,12 +22,14 @@ def main():
     confdir = os.path.abspath(os.path.join(homedir, '.finance'))
     sys.path.insert(0, confdir)
 
-    from config import watched_stocks
-    finance.show_realtime(*watched_stocks)
-    print
+    from config import stocks_watched, stocks_held
+    realtime_table = finance.format_realtime(stocks_watched, stocks_held)
 
-    from config import stocks, cash
-    finance.show_market_value(stocks, cash)
+    from config import cash
+    invest_table = finance.format_market_value(stocks_held, cash)
+
+    print realtime_table
+    print invest_table
 
 if __name__ == '__main__':
     main()

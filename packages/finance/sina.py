@@ -20,22 +20,31 @@ REALTIME_URL = 'http://hq.sinajs.cn/?list=%s'
 
 REALTIME_FIELDS_CN = [('corp_code', str), ('corp', str), ('opening', Decimal),
     ('last_closing', Decimal), ('highest', Decimal), ('lowest', Decimal),
-    ('closing', Decimal)]
+    ('closing', Decimal),
+]
 
 REALTIME_FIELDS_HK = [('corp_code', str), ('corp', str), ('opening', Decimal),
     ('last_closing', Decimal), ('highest', Decimal), ('lowest', Decimal),
-    ('closing', Decimal)]
+    ('closing', Decimal), ('delta', Decimal), ('percent', Decimal),
+    ('AAA', Decimal), ('BBB', Decimal), ('deal', Decimal), ('volume', Decimal),
+]
 
 REALTIME_FIELDS_US = [('corp', str), ('closing', Decimal),
     ('percent', Decimal), ('time', str), ('delta', Decimal),
     ('opening', Decimal), ('highest', Decimal), ('lowest', Decimal),
-    ('closingg', Decimal)]
+    ('closingg', Decimal), ('52w_highest', Decimal), ('52w_lowest', Decimal),
+    ('AAA', str), ('BBB', str), ('capitalization', Decimal), ('CCC', str),
+    ('DDD', str), ('EEE', str), ('FFF', str), ('GGG', str), ('HHH', str),
+    ('III', str), ('JJJ', str), ('KKK', str), ('LLL', str), ('MMM', str),
+    ('NNN', str), ('last_closing', Decimal), ('OOO', str),
+]
 
 FOREX_REALTIME_URL = 'http://hq.sinajs.cn/?list=%s'
 
 FOREX_REALTIME_FIELDS = (('time', str), ('bid', Decimal), ('ask', Decimal),
     ('last_closing', Decimal), ('delta', Decimal), ('opening', Decimal),
-    ('highest', Decimal), ('lowest', Decimal), ('closing', Decimal))
+    ('highest', Decimal), ('lowest', Decimal), ('closing', Decimal),
+)
 
 class SinaFinance(object):
 

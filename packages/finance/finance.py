@@ -19,8 +19,9 @@ from sina import sina as sina_api
 from yahoo import yahoo as yahoo_api
 
 REALTIME_FIELDS = ('corp', 'closing', 'last_closing', 'opening', 'highest',
-        'lowest')
-REALTIME_HEADERS = ('Corp', '实时', '昨收', '今开', '最高', '最低')
+        'lowest', 'held', 'market_value')
+REALTIME_HEADERS = ('Corp', '实时', '昨收', '今开', '最高', '最低', '持有',
+        '市值')
 #REALTIME_HEADERS = tuple((f.upper() for f in REALTIME_FIELDS))
 
 MARKET2CURRENCY = {
@@ -83,25 +84,38 @@ def print_right(s, width, l=None, splits=0):
     do_print(s, left, right, splits)
 
 
-def print_table(table, encoding='utf8'):
+def format_table(table, encoding='utf8'):
     table = [[(f, print_width(f, encoding=encoding)) for f in r] for r in table]
     widthes = [max([l for _, l in column]) for column in zip(*table)]
 
+    buffers = []
     for row in table:
         for width, (value, l) in zip(widthes, row):
-            print ' ' * (width - l) + value + ' ' * 1,
+            buffers.append(' ' * (width - l) + value + ' ' * 1)
             continue
             fmt = '%% %ds' % (l,)
             print fmt % (value,),
-        print
+        buffers.append('\n')
+    return ''.join(buffers)
+
+def print_table(table, encoding='utf8'):
+    print format_table(table, encoding=encoding)
 
 class Finance(object):
-    def show_realtime(self, *l):
-        table = [[str(data.get(f, '')) for f in REALTIME_FIELDS]
-            for data in sina_api.realtime(*l)]
+    def format_realtime(self, stocks, helds={}):
+        realtime_datas = sina_api.realtime(*stocks)
+        for stock, data in zip(stocks, realtime_datas):
+            held = helds.get(stock, 0)
+            if held:
+                data['held'] = held = Decimal(held)
+                data['market_value'] = data['closing'] * held
+        table = [
+            [str(data.get(f, '')) for f in REALTIME_FIELDS]
+            for data in realtime_datas
+        ]
         table_header = [REALTIME_HEADERS]
         table_header.extend(table)
-        print_table(table_header)
+        return format_table(table_header)
 
     def market_value(self, stocks):
         value_set = {}
@@ -126,7 +140,7 @@ class Finance(object):
                 total += number * forex
         return total
 
-    def show_market_value(self, stocks, cash):
+    def format_market_value(self, stocks, cash):
         stock_value = self.market_value(stocks)
         market_value = dict(cash)
         for currency, number in stock_value.iteritems():
@@ -159,10 +173,16 @@ class Finance(object):
                 values.append('%.2f' % (value,))
 
         value = self.forex_convert(market_value, 'CNY')
-        headers.append('等价人民币￥')
+        headers.append('等值人民币￥')
         values.append('%.2f' % (value,))
 
-        print_table([headers, values])
+        return format_table([headers, values])
+
+    def show_realtime(self, *l):
+        print self.format_realtime(*l)
+
+    def show_market_value(self, stocks, cash):
+        self.format_market_value(stocks, cash)
 
 finance = Finance()
 
