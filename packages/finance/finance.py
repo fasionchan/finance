@@ -117,6 +117,16 @@ class Finance(object):
         table_header.extend(table)
         return format_table(table_header)
 
+    def format_forex_realtime(self, forexs):
+        header, values = [], []
+        for forex in forexs:
+            name = CURRENCY2NAME.get(forex)
+            if not name:
+                continue
+            header.append(name)
+            values.append(str(sina_api.forex_realtime(forex)['closing']))
+        return format_table([header, values])
+
     def market_value(self, stocks):
         value_set = {}
         for stock, number in stocks.iteritems():
@@ -195,8 +205,8 @@ def test():
     print finance.market_value(stocks)
     print
 
-    finance.show_realtime('hk.00700', 'hk.01022', 'nasdaq.jd', 'nasdaq.dang',
-            'nasdaq.bac')
+    finance.show_realtime(('hk.00700', 'hk.01022', 'nasdaq.jd', 'nasdaq.dang',
+            'nasdaq.bac'))
     print
 
     stocks = {
@@ -214,6 +224,7 @@ def test():
         for c, v in cash.iteritems()
     }
     finance.show_market_value(stocks, cash)
+    print finance.format_forex_realtime(cash.keys())
 
 if __name__ == '__main__':
     test()
