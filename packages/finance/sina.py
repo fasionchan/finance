@@ -14,9 +14,33 @@ Changelog:
 '''
 
 import requests
+import datetime
 from decimal import Decimal
 
 REALTIME_URL = 'http://hq.sinajs.cn/?list=%s'
+US_DAILY_URL = 'http://stock.finance.sina.com.cn/usstock/api/json.php/US_MinKService.getDailyK?symbol=%s&___qn=3'
+# http://stock.finance.sina.com.cn/hkstock/api/openapi.php/HK_StockService.getHKMinline?symbol=00700
+
+MARKET_DAILY_URL = {
+    'nyse': US_DAILY_URL,
+    'nasdaq': US_DAILY_URL,
+}
+
+US_DAILY_CONVERT = lambda d, o, c, h, l, v, **kwargs: {
+    'date': datetime.date(*map(int, d.split('-'))),
+    'open': Decimal(o),
+    'close': Decimal(c),
+    'highest': Decimal(h),
+    'lowest': Decimal(l),
+    'volumn': Decimal(v),
+}
+
+DEFAULT_DAILY_CONVERT = lambda **kwargs: kwargs
+
+MARKET_DAILY_CONVERT = {
+    'nyse': US_DAILY_CONVERT,
+    'nasdaq': US_DAILY_CONVERT,
+}
 
 REALTIME_FIELDS_CN = [('corp_code', str), ('corp', str), ('opening', Decimal),
     ('last_closing', Decimal), ('highest', Decimal), ('lowest', Decimal),
@@ -48,6 +72,7 @@ FOREX_REALTIME_FIELDS = (('time', str), ('bid', Decimal), ('ask', Decimal),
 
 class SinaFinance(object):
 
+    # 股票实时
     def realtime_api(self, *l):
         raw = requests.get(REALTIME_URL % (','.join(l),)).text.encode('utf8')
         return [line.split('"')[1].split(',')
@@ -57,6 +82,7 @@ class SinaFinance(object):
         return 'gb_%s' % (symbol.lower(),), REALTIME_FIELDS_US
 
     parse_symbol_nasdaq = parse_symbol_us
+    parse_symbol_nyse = parse_symbol_us
 
     def parse_symbol_cn(self, loc, symbol):
         return '%s%s' % (loc.lower(), symbol), REALTIME_FIELDS_CN
@@ -84,6 +110,7 @@ class SinaFinance(object):
                 results.append(dict(kvs))
         return results
 
+    # 外汇实时
     def forex_realtime_api(self, fr, to='CNY'):
         raw = requests.get(REALTIME_URL % (fr+to,)).text.encode('utf8')
         return [line.split('"')[1].split(',')
@@ -94,6 +121,18 @@ class SinaFinance(object):
         data = self.forex_realtime_api(fr)[0]
         return dict([(key, cls(value))
             for (key, cls), value in zip(FOREX_REALTIME_FIELDS, data)])
+
+    # 股票日K
+    def daily(self, *symbols):
+        results = []
+        for symbol in symbols:
+            loc, code = symbol.split('.')
+            loc, code = loc.lower(), code.lower()
+            url = MARKET_DAILY_URL.get(loc) % (code,)
+            convert = MARKET_DAILY_CONVERT.get(loc, DEFAULT_DAILY_CONVERT)
+            for data in requests.get(url).json():
+                results.append(convert(**data))
+        return results
 
 sina = SinaFinance()
 
@@ -109,6 +148,9 @@ def test():
 
     print sina.forex_realtime('USD')
     print sina.forex_realtime('HKD')
+
+    print sina.daily('nyse.bac')
+    print sina.daily('nyse.baba')
 
 if __name__ == '__main__':
     test()
